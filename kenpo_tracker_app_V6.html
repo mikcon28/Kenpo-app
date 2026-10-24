@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>American Kenpo Tracker</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kenpo: {
+                            dark: '#121212',
+                            card: '#1e1e1e',
+                            red: '#b91c1c', 
+                            redHover: '#991b1b', 
+                            gold: '#d4af37'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #111827;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .transition-all-smooth {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #b91c1c;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #b91c1c;
+        }
+        .toggle-checkbox {
+            right: 4px;
+            z-index: 1;
+            border-color: #4b5563;
+            transition: all 0.3s;
+        }
+        .toggle-label {
+            background-color: #374151;
+            transition: all 0.3s;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- DATA ---
+        const belts = ['Yellow', 'Orange', 'Purple', 'Blue', 'Green', '3rd Brown', '2nd Brown', '1st Brown', 'Black'];
+        
+        const kenpoData = [
+            { id: "k1", belt: "Yellow", type: "Set", name: "Blocking Set 1" },
+            { id: "k2", belt: "Yellow", type: "Form", name: "Short Form 1" },
+            { id: "k3", belt: "Yellow", type: "Technique", name: "Delayed Sword - Right Grab / Punch" },
+            { id: "k4", belt: "Yellow", type: "Technique", name: "Alternating Maces - Two Handed Push to Chest" },
+            { id: "k5", belt: "Yellow", type: "Technique", name: "Sword of Destruction - Left Roundhouse Punch" },
+            { id: "k6", belt: "Yellow", type: "Technique", name: "Deflecting Hammer - Right Front Kick" },
+            { id: "k7", belt: "Yellow", type: "Technique", name: "Captured Twigs - Rear Bear Hug - Arms Pinned" },
+            { id: "k8", belt: "Yellow", type: "Technique", name: "Grasp of Death - Right Headlock" },
+            { id: "k9", belt: "Yellow", type: "Technique", name: "Checking the Storm - Right Overhead Club" },
+            { id: "k10", belt: "Yellow", type: "Technique", name: "Mace of Aggression - Two Hand Chest Grab" },
+            { id: "k11", belt: "Yellow", type: "Technique", name: "Attacking Mace - Right Step Through Straight Punch" },
+            { id: "k12", belt: "Yellow", type: "Technique", name: "Sword and Hammer - Shoulder Grab From Right Flank" },
+            { id: "k13", belt: "Yellow", type: "Technique", name: "Intellectual Departure - Right Front Kick" },
+            { id: "k14", belt: "Orange", type: "Set", name: "Stance Set 1" },
+            { id: "k15", belt: "Orange", type: "Form", name: "Long Form 1" },
+            { id: "k16", belt: "Orange", type: "Technique", name: "Clutching Feathers - Left Hair Grab" },
+            { id: "k17", belt: "Orange", type: "Technique", name: "Triggered Salute - Right Hand Direct Push" },
+            { id: "k18", belt: "Orange", type: "Technique", name: "Dance of Death - Right Straight Punch" },
+            { id: "k19", belt: "Orange", type: "Technique", name: "Thrusting Salute - Right Step Through Front Kick" },
+            { id: "k20", belt: "Orange", type: "Technique", name: "Gift of Destruction - Handshake" },
+            { id: "k21", belt: "Orange", type: "Technique", name: "Locking Horns - Front Headlock" },
+            { id: "k22", belt: "Orange", type: "Technique", name: "Evading the Storm - Right Overhead Club" },
+            { id: "k23", belt: "Orange", type: "Technique", name: "Lone Kimono - Left Hand Grab" },
+            { id: "k24", belt: "Orange", type: "Technique", name: "Glancing Salute - Front Right Cross Push" },
+            { id: "k25", belt: "Orange", type: "Technique", name: "Five Swords - Right Step Through Roundhouse Punch" },
+            { id: "k26", belt: "Orange", type: "Technique", name: "Scraping Hoof - Rear Full Nelson Lock" },
+            { id: "k27", belt: "Orange", type: "Technique", name: "Grip of Death - Headlock From Left Flank" },
+            { id: "k28", belt: "Orange", type: "Technique", name: "Repeating Mace - Front Left Hand Cross Push" },
+            { id: "k29", belt: "Orange", type: "Technique", name: "Shielding Hammer - Left Step Through Hook Punch" },
+            { id: "k30", belt: "Orange", type: "Technique", name: "Striking Serpents Head - Front Bear Hug Arms Free" },
+            { id: "k31", belt: "Orange", type: "Technique", name: "Crashing Wings - Rear Bear Hug Arms Free" },
+            { id: "k32", belt: "Purple", type: "Set", name: "Kicking Set 1" },
+            { id: "k33", belt: "Purple", type: "Form", name: "Short Form 2" },
+            { id: "k34", belt: "Purple", type: "Technique", name: "Twirling Wings - Rear Two Hand Stiff Arm Shoulder Grab" },
+            { id: "k35", belt: "Purple", type: "Technique", name: "Snapping Twig - Left Hand Lapel Grab" },
+            { id: "k36", belt: "Purple", type: "Technique", name: "Leaping Crane - Right Straight Punch" },
+            { id: "k37", belt: "Purple", type: "Technique", name: "Buckling Branch - Left Step Through Front Kick" },
+            { id: "k38", belt: "Purple", type: "Technique", name: "Crushing Hammer - Rear Bear Hug Arms Pinned" },
+            { id: "k39", belt: "Purple", type: "Technique", name: "Captured Leaves - Right Flank Finger Lock" },
+            { id: "k40", belt: "Purple", type: "Technique", name: "Calming the Storm - Right Roundhouse Club" },
+            { id: "k41", belt: "Purple", type: "Technique", name: "Crossing Talon - Right Cross Wrist Grab" },
+            { id: "k42", belt: "Purple", type: "Technique", name: "Reversing Mace - Left Step Through Cross Push" },
+            { id: "k43", belt: "Purple", type: "Technique", name: "Thrusting Prongs - Front Bear Hug Arms Pinned" },
+            { id: "k44", belt: "Purple", type: "Technique", name: "Locked Wing - Right Rear Hammer Lock" },
+            { id: "k45", belt: "Purple", type: "Technique", name: "Obscured Wing - Shoulder Grab From Right Flank (in close)" },
+            { id: "k46", belt: "Purple", type: "Technique", name: "Raining Claw - Right Uppercut" },
+            { id: "k47", belt: "Purple", type: "Technique", name: "Spiralling Twig - Rear Bear Hug Arms Free" },
+            { id: "k48", belt: "Purple", type: "Technique", name: "Twisted Twig - Front Wrist Lock" },
+            { id: "k49", belt: "Purple", type: "Technique", name: "Obscure Sword - Pushing Shoulder Grab From Right Flank" },
+            { id: "k50", belt: "Purple", type: "Technique", name: "Aggressive Twins - Step Throught Right Front Kick" },
+            { id: "k51", belt: "Purple", type: "Technique", name: "Spreading Branches - Rear Bear Hug Arms Pinned" },
+            { id: "k52", belt: "Blue", type: "Set", name: "Coordination Set 1" },
+            { id: "k53", belt: "Blue", type: "Form", name: "Long Form 2" },
+            { id: "k54", belt: "Blue", type: "Technique", name: "Twin Kimono - Front Two Hand Grab" },
+            { id: "k55", belt: "Blue", type: "Technique", name: "Parting Wings - Two Hand Choke" },
+            { id: "k56", belt: "Blue", type: "Technique", name: "Thundering Hammers - Right Step Through Punch" },
+            { id: "k57", belt: "Blue", type: "Technique", name: "Swinging Pendulum - Right Roundhouse Kick" },
+            { id: "k58", belt: "Blue", type: "Technique", name: "Squeezing the Peach - Rear Bear Hug Arms Pinned" },
+            { id: "k59", belt: "Blue", type: "Technique", name: "Circling Wings - Rear Two Hand Choke Arms Bent" },
+            { id: "k60", belt: "Blue", type: "Technique", name: "Obstructing the Storm - Right Step Through Overhead Club" },
+            { id: "k61", belt: "Blue", type: "Technique", name: "Darting Mace - Two Hand Wrist Grab" },
+            { id: "k62", belt: "Blue", type: "Technique", name: "Hooking Wings - Front Two Hand Low Push" },
+            { id: "k63", belt: "Blue", type: "Technique", name: "Shield and Sword - Left Step Through Straight Punch" },
+            { id: "k64", belt: "Blue", type: "Technique", name: "Gift in Return - Handshake" },
+            { id: "k65", belt: "Blue", type: "Technique", name: "Bow of Compulsion - Right Wrist Lock on Opponent's Chest" },
+            { id: "k66", belt: "Blue", type: "Technique", name: "Charging Ram - Front Tackle / Grab" },
+            { id: "k67", belt: "Blue", type: "Technique", name: "Sleeper - Right Step Through Punch" },
+            { id: "k68", belt: "Blue", type: "Technique", name: "Cross of Destruction - Rear Two Hand Choke" },
+            { id: "k69", belt: "Blue", type: "Technique", name: "Flight to Freedom - Rear Right Hammer Lock" },
+            { id: "k70", belt: "Green", type: "Set", name: "Striking Set 1" },
+            { id: "k71", belt: "Green", type: "Form", name: "Short Form 3" },
+            { id: "k72", belt: "Green", type: "Technique", name: "Begging Hands - Front Two Hand Wrist Grab" },
+            { id: "k73", belt: "Green", type: "Technique", name: "Thrusting Wedge - Front Two Hand Choke" },
+            { id: "k74", belt: "Green", type: "Technique", name: "Flashing Wings - Step Through Right Straight Punch" },
+            { id: "k75", belt: "Green", type: "Technique", name: "Hugging Pendulum - Right  Step Up Side Kick" },
+            { id: "k76", belt: "Green", type: "Technique", name: "Repeated Devastation - Rear Full Nelson" },
+            { id: "k77", belt: "Green", type: "Technique", name: "Destructive Twins - Front Two Hand Choke Pulling In" },
+            { id: "k78", belt: "Green", type: "Technique", name: "Defying the Storm - Right Roundhouse Club" },
+            { id: "k79", belt: "Green", type: "Technique", name: "Crossed Twigs - Reat Two Hand Wrist Grab" },
+            { id: "k80", belt: "Green", type: "Technique", name: "Snaking Talon - Two Hand High Push" },
+            { id: "k81", belt: "Green", type: "Technique", name: "Shield and Mace - Right Straight Punch" },
+            { id: "k82", belt: "Green", type: "Technique", name: "Retreating Pendulum - Step Through Right Side Kick" },
+            { id: "k83", belt: "Green", type: "Technique", name: "Tripping Arrow - Front Bear Hug Arms Free" },
+            { id: "k84", belt: "Green", type: "Technique", name: "Wings of Silk - Rear Double Arm Lock" },
+            { id: "k85", belt: "Green", type: "Technique", name: "Conquering Shield - Left Lapel Grab With Back Against Wall" },
+            { id: "k86", belt: "Green", type: "Technique", name: "Entangled Wing - Front Figure 4 Arm Lock" },
+            { id: "k87", belt: "Green", type: "Technique", name: "Raking Mace - Two Hand Lapel Grab" },
+            { id: "k88", belt: "3rd Brown", type: "Set", name: "Finger Set 1" },
+            { id: "k89", belt: "3rd Brown", type: "Form", name: "Long Form 3" },
+            { id: "k90", belt: "3rd Brown", type: "Technique", name: "Dominating Circles - Right Cross Shoulder Grab" },
+            { id: "k91", belt: "3rd Brown", type: "Technique", name: "Twist of Fate - Two Hand Push" },
+            { id: "k92", belt: "3rd Brown", type: "Technique", name: "Flashing Mace - Step Through Right Punch" },
+            { id: "k93", belt: "3rd Brown", type: "Technique", name: "Detour From Doom - Right Roundhouse Kick" },
+            { id: "k94", belt: "3rd Brown", type: "Technique", name: "Gift of Destiny - Handshake" },
+            { id: "k95", belt: "3rd Brown", type: "Technique", name: "Blinding Sacrifice - Front Two Hand Choke" },
+            { id: "k96", belt: "3rd Brown", type: "Technique", name: "Returning Storm - Right Roundhouse Club Then Backhand Club" },
+            { id: "k97", belt: "3rd Brown", type: "Technique", name: "Glancing Spear - Right Direct Wrist Grab" },
+            { id: "k98", belt: "3rd Brown", type: "Technique", name: "Encounter With Danger - Two Hand Push" },
+            { id: "k99", belt: "3rd Brown", type: "Technique", name: "Gathering Clouds - Right Punch" },
+            { id: "k100", belt: "3rd Brown", type: "Technique", name: "Circle of Doom - Right Front Kick" },
+            { id: "k101", belt: "3rd Brown", type: "Technique", name: "Squatting Sacrifice - Rear Bear Hug Arms Free" },
+            { id: "k102", belt: "3rd Brown", type: "Technique", name: "Fallen Cross - Rear Two Hand Choke" },
+            { id: "k103", belt: "3rd Brown", type: "Technique", name: "Brushing The Storm - Right Overhead Club From Right Flank" },
+            { id: "k104", belt: "3rd Brown", type: "Technique", name: "Desparate Falcons - Two Hand Grab Pulling In" },
+            { id: "k105", belt: "3rd Brown", type: "Technique", name: "Circling the Horizon - Right Punch" },
+            { id: "k106", belt: "3rd Brown", type: "Technique", name: "Gripping Talon - Left Wrist Grab" },
+            { id: "k107", belt: "3rd Brown", type: "Technique", name: "Broken Ram - Front Tackle" },
+            { id: "k108", belt: "3rd Brown", type: "Technique", name: "Circling Destruction - Left Punch" },
+            { id: "k109", belt: "3rd Brown", type: "Technique", name: "Obscure Claws - Shoulder Grab from Right Flank" },
+            { id: "k110", belt: "2nd Brown", type: "Set", name: "Coordination Set 2" },
+            { id: "k111", belt: "2nd Brown", type: "Form", name: "Start Long Form 4" },
+            { id: "k112", belt: "2nd Brown", type: "Technique", name: "Menacing Twirl - Rear Left Hand Belt Grab" },
+            { id: "k113", belt: "2nd Brown", type: "Technique", name: "Leap From Danger - Rear Two Hand Push" },
+            { id: "k114", belt: "2nd Brown", type: "Technique", name: "Circles of Protection - Step Through Overhand Right Punch" },
+            { id: "k115", belt: "2nd Brown", type: "Technique", name: "Rotating Destruction - Right Roundhouse Kick then Left Spinning Back/Side Kick" },
+            { id: "k116", belt: "2nd Brown", type: "Technique", name: "Broken Gift - Handshake" },
+            { id: "k117", belt: "2nd Brown", type: "Technique", name: "Escape From Death- Rear Right Arm Choke" },
+            { id: "k118", belt: "2nd Brown", type: "Technique", name: "Capturing the Storm - Right Overhead Club" },
+            { id: "k119", belt: "2nd Brown", type: "Technique", name: "Intercepting the Ram - Front Tackle" },
+            { id: "k120", belt: "2nd Brown", type: "Technique", name: "Back Breaker - Step Throught Right Punch from Right Flank" },
+            { id: "k121", belt: "2nd Brown", type: "Technique", name: "Deceptive Panther - Right Front Kick then Right Roundhouse Kick" },
+            { id: "k122", belt: "2nd Brown", type: "Technique", name: "Twirling Sacrifice - Full Nelson" },
+            { id: "k123", belt: "2nd Brown", type: "Technique", name: "Heavenly Ascent - Front Two Hand Choke with Straight Arms" },
+            { id: "k124", belt: "2nd Brown", type: "Technique", name: "Securing the Storm - Right Roundhouse Club" },
+            { id: "k125", belt: "2nd Brown", type: "Technique", name: "Falling Falcon - Right Direct Lapel Grab" },
+            { id: "k126", belt: "2nd Brown", type: "Technique", name: "Taming the Mace - Step Through Right Punch" },
+            { id: "k127", belt: "2nd Brown", type: "Technique", name: "Defensive Cross - Right Front Kick" },
+            { id: "k128", belt: "2nd Brown", type: "Technique", name: "Cross of Death - Front Two Hand Cross Choke" },
+            { id: "k129", belt: "2nd Brown", type: "Technique", name: "Kneel of Compulsion - Step Through Right Punch from Right Flank" },
+            { id: "k130", belt: "2nd Brown", type: "Technique", name: "Bowing to Buddha - Roundhouse Kick (opponent kneeling)" },
+            { id: "k131", belt: "2nd Brown", type: "Technique", name: "Glancing Wing - Left Uppercut" },
+            { id: "k132", belt: "1st Brown", type: "Set", name: "Blocking Set 2" },
+            { id: "k133", belt: "1st Brown", type: "Form", name: "Continue Long Form 4" },
+            { id: "k134", belt: "1st Brown", type: "Technique", name: "Fatal Cross  - Front Attempted Low Grab" },
+            { id: "k135", belt: "1st Brown", type: "Technique", name: "Thrust into Darkness - Step Through Right Punch from Rear" },
+            { id: "k136", belt: "1st Brown", type: "Technique", name: "Circling Fans - Left then Right Straight Punch" },
+            { id: "k137", belt: "1st Brown", type: "Technique", name: "Dance of Darkness - Right Front Kick Stepping Through with Right Punch" },
+            { id: "k138", belt: "1st Brown", type: "Technique", name: "Falcons of Force - 2 Man - Shoulder Grabs from Both Flanks" },
+            { id: "k139", belt: "1st Brown", type: "Technique", name: "Bear and the Ram - 2 Man - Rear Bear Hug Arms Free and Right Punch from Front" },
+            { id: "k140", belt: "1st Brown", type: "Technique", name: "Clipping the Storm - Right Thrusting Club" },
+            { id: "k141", belt: "1st Brown", type: "Technique", name: "Circling Windmills - Two Hand Push then Right Punch" },
+            { id: "k142", belt: "1st Brown", type: "Technique", name: "Leap of Death - Step Through Right Punch" },
+            { id: "k143", belt: "1st Brown", type: "Technique", name: "Protecting Fans - Right then Left Punch" },
+            { id: "k144", belt: "1st Brown", type: "Technique", name: "Reversing Circles - Left Roundhouse Kick then Right Punch" },
+            { id: "k145", belt: "1st Brown", type: "Technique", name: "Courting the Tiger - 2 Man - Shoulder Grabs from Both Flanks" },
+            { id: "k146", belt: "1st Brown", type: "Technique", name: "Gathering the Snakes - 2 Man - Left Punch from Front and Right Punch from Rear" },
+            { id: "k147", belt: "1st Brown", type: "Technique", name: "Raining Lance - Right Overhead Knife" },
+            { id: "k148", belt: "1st Brown", type: "Technique", name: "Destructive Fans - Step Through Right Punch from Left Flank" },
+            { id: "k149", belt: "1st Brown", type: "Technique", name: "Unfurling Crane - Left then Right Straight Punches" },
+            { id: "k150", belt: "1st Brown", type: "Technique", name: "Unwinding Pendulum - Right Fronk Kick Step Through with Right Punch" },
+            { id: "k151", belt: "1st Brown", type: "Technique", name: "Grasping Eagles - 2 Man - Right Lapel Grab and Rear Right Arm Grab" },
+            { id: "k152", belt: "1st Brown", type: "Technique", name: "Parting the Snakes - 2 Man - Right Punch from Front and Rear Attempted Grab" },
+            { id: "k153", belt: "1st Brown", type: "Technique", name: "Glancing Lance - Right Step Through Knife" },
+            { id: "k154", belt: "Black", type: "Set", name: "Two Person Set" },
+            { id: "k155", belt: "Black", type: "Form", name: "Long Form 4" },
+            { id: "k156", belt: "Black", type: "Technique", name: "Destructive Kneel - Right Step Through Punch" },
+            { id: "k157", belt: "Black", type: "Technique", name: "Entwined Maces - Right then Left Punch" },
+            { id: "k158", belt: "Black", type: "Technique", name: "Marriage of the Rams - 2 Man - Shoulder Grabs from Both Flanks" },
+            { id: "k159", belt: "Black", type: "Technique", name: "Ram and the Eagle - 2 Man - Right Punch from Front and Right Shoulder Grab" },
+            { id: "k160", belt: "Black", type: "Technique", name: "Escape from the Storm - Overhead Club from Right Flank" },
+            { id: "k161", belt: "Black", type: "Technique", name: "Thrusting Lance - Right Step Through Knife" },
+            { id: "k162", belt: "Black", type: "Technique", name: "Capturing the Rod - Front Right Gun" },
+            { id: "k163", belt: "Black", type: "Technique", name: "Prance of the Tiger - Step Through Right Punch from Right Flank" },
+            { id: "k164", belt: "Black", type: "Technique", name: "Fatal Deviation - Right then Left Punch" },
+            { id: "k165", belt: "Black", type: "Technique", name: "Snakes of Wisdom - 2 Man - Shoulder Grabs from Both Flanks" },
+            { id: "k166", belt: "Black", type: "Technique", name: "Reprimanding the Bears - 2 Man - Rear Bear Hug Arms Free and Right Punch from Front" },
+            { id: "k167", belt: "Black", type: "Technique", name: "Circling the Storm - Right Club Thrust" },
+            { id: "k168", belt: "Black", type: "Technique", name: "Entwined Lance - Right Step Through Knife" },
+            { id: "k169", belt: "Black", type: "Technique", name: "Broken Rod - Gun to Back" },
+            { id: "k170", belt: "Black", type: "Technique", name: "Twirling Hammers - Step Through Left Punch" },
+            { id: "k171", belt: "Black", type: "Technique", name: "Piercing Lance - Right Knife Thrust - Arms Up" },
+            { id: "k172", belt: "Black", type: "Technique", name: "Unfolding the Dark - Left Punch from Right Rear Flank" },
+            { id: "k173", belt: "Black", type: "Technique", name: "Defying the Rod - Front Right Gun" },
+            { id: "k174", belt: "Black", type: "Technique", name: "Escape from the Darkness - Right Punch from Left Rear Flank" },
+            { id: "k175", belt: "Black", type: "Technique", name: "Twisted Rod - Front Right Gun" }
+        ];
+
+        // --- COMPONENTS ---
+
+        const Icons = {
+            Book: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>,
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+            List: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>,
+            Flashcard: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
+            ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+            ChevronUp: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
+            ThumbsUp: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>,
+            ThumbsDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+        };
+
+        // Renders an individual Technique, Form, or Set
+        const ItemCard = ({ item, userData, updateItem }) => {
+            const [expanded, setExpanded] = useState(false);
+            const data = userData[item.id] || { notes: '', needsTraining: false };
+
+            return (
+                <div className="bg-gray-800 rounded-xl p-4 mb-4 shadow-lg border border-gray-700 transition-all-smooth overflow-hidden">
+                    <div 
+                        className="flex justify-between items-center cursor-pointer select-none"
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        <div className="flex-1 pr-4">
+                            <h3 className="text-base font-bold text-white leading-tight">{item.name}</h3>
+                            <p className="text-xs text-gray-400 mt-1">
+                                {item.belt} Belt <span className="mx-1">•</span> 
+                                <span className={item.type === 'Form' ? 'text-kenpo-gold' : item.type === 'Set' ? 'text-blue-400' : 'text-gray-400'}>
+                                    {item.type}
+                                </span>
+                            </p>
+                        </div>
+                        <div className="flex items-center text-gray-400 flex-shrink-0">
+                            {data.needsTraining && <span className="w-2.5 h-2.5 rounded-full bg-kenpo-red mr-3 shadow-[0_0_8px_rgba(217,56,30,0.8)]"></span>}
+                            {expanded ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
+                        </div>
+                    </div>
+
+                    {expanded && (
+                        <div className="mt-4 pt-4 border-t border-gray-700 transition-all-smooth">
+                            <div className="flex items-center justify-between mb-4 bg-gray-900 p-3 rounded-lg border border-gray-700">
+                                <span className="text-xs font-semibold text-gray-200 uppercase tracking-wider">Training Needed</span>
+                                <div className="relative inline-block w-12 align-middle select-none">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={data.needsTraining}
+                                        onChange={(e) => updateItem(item.id, 'needsTraining', e.target.checked)}
+                                        className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                                    />
+                                    <label className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer"></label>
+                                </div>
+                            </div>
+                            
+                            <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Personal Notes</label>
+                            <textarea
+                                className="w-full bg-gray-900 text-white rounded-lg p-3 text-sm outline-none focus:ring-1 focus:ring-kenpo-red border border-gray-700 transition-all-smooth resize-none"
+                                rows="3"
+                                placeholder="Add tips, key steps, or corrections..."
+                                value={data.notes}
+                                onChange={(e) => updateItem(item.id, 'notes', e.target.value)}
+                            ></textarea>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // TAB 1: Curriculum
+        const CurriculumTab = ({ belts, selectedBelt, setSelectedBelt, kenpoData, userData, updateItem }) => {
+            const items = useMemo(() => kenpoData.filter(i => i.belt === selectedBelt), [selectedBelt, kenpoData]);
+            
+            return (
+                <div className="pb-28 px-4 pt-4">
+                    <div className="flex overflow-x-auto no-scrollbar gap-2 mb-5 pb-1">
+                        {belts.map(belt => (
+                            <button
+                                key={belt}
+                                onClick={() => setSelectedBelt(belt)}
+                                className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold transition-colors shadow-sm text-xs ${
+                                    selectedBelt === belt 
+                                    ? 'bg-kenpo-red text-white' 
+                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
+                                }`}
+                            >
+                                {belt} Belt
+                            </button>
+                        ))}
+                    </div>
+
+                    {items.length > 0 ? (
+                        items.map(item => <ItemCard key={item.id} item={item} userData={userData} updateItem={updateItem} />)
+                    ) : (
+                        <div className="text-center text-gray-500 mt-10">No items found for this belt.</div>
+                    )}
+                </div>
+            );
+        };
+
+        // TAB 2: Browse (Categories: Empty Hands, Stick, Knife, Gun, 2 Person)
+        const BrowseTab = ({ kenpoData, userData, updateItem }) => {
+            const [filter, setFilter] = useState('Empty Hands');
+            const filters = ['Empty Hands', 'Stick', 'Knife', 'Gun', '2 Person'];
+
+            const items = useMemo(() => {
+                return kenpoData.filter(item => {
+                    // Only include Techniques (no Sets or Forms)
+                    if (item.type !== 'Technique') return false;
+                    
+                    const name = item.name.toLowerCase();
+                    const isGun = name.includes('gun');
+                    const isKnife = name.includes('knife');
+                    const isStick = name.includes('club'); // Only matches "club"
+                    const is2Person = name.includes('2 man');
+                    
+                    if (filter === 'Gun') return isGun;
+                    if (filter === 'Knife') return isKnife;
+                    if (filter === 'Stick') return isStick;
+                    if (filter === '2 Person') return is2Person;
+                    if (filter === 'Empty Hands') return !isGun && !isKnife && !isStick && !is2Person;
+                    
+                    return false;
+                });
+            }, [filter, kenpoData]);
+
+            return (
+                <div className="pb-28 px-4 pt-4">
+                    <div className="flex overflow-x-auto no-scrollbar gap-2 mb-5 pb-1">
+                        {filters.map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`whitespace-nowrap px-4 py-2 rounded-full font-semibold transition-colors shadow-sm text-xs ${
+                                    filter === f 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
+                                }`}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="mb-4">
+                        <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">{items.length} Techniques Found</span>
+                    </div>
+
+                    {items.length > 0 ? (
+                        items.map(item => <ItemCard key={item.id} item={item} userData={userData} updateItem={updateItem} />)
+                    ) : (
+                        <div className="text-center text-gray-500 mt-10">No techniques match this filter.</div>
+                    )}
+                </div>
+            );
+        };
+
+        // TAB 3: Training Plan
+        const TrainingPlanTab = ({ kenpoData, userData, updateItem }) => {
+            const items = useMemo(() => kenpoData.filter(i => userData[i.id]?.needsTraining), [userData, kenpoData]);
+            
+            return (
+                <div className="pb-28 px-4 pt-6">
+                    <div className="mb-5">
+                        <h2 className="text-xl font-bold text-white">Training Plan</h2>
+                        <p className="text-gray-400 text-xs mt-0.5">Techniques & forms flagged for extra practice across all belts.</p>
+                    </div>
+                    
+                    {items.length > 0 ? (
+                        items.map(item => <ItemCard key={item.id} item={item} userData={userData} updateItem={updateItem} />)
+                    ) : (
+                        <div className="text-center mt-20 p-8 bg-gray-800 rounded-2xl border border-gray-700 shadow-lg">
+                            <span className="text-4xl block mb-3">🥋</span>
+                            <h3 className="text-lg font-bold text-white mb-1">Your training plan is clear!</h3>
+                            <p className="text-gray-400 text-xs">Flag items in the Curriculum or use Flashcards to add review items here.</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // TAB 4: Flashcards
+        const FlashcardTab = ({ belts, selectedBelt, setSelectedBelt, kenpoData, userData, updateItem }) => {
+            const [sessionActive, setSessionActive] = useState(false);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [results, setResults] = useState({ up: 0, down: 0 });
+
+            useEffect(() => {
+                setSessionActive(false);
+                setCurrentIndex(0);
+                setResults({ up: 0, down: 0 });
+            }, [selectedBelt]);
+
+            const flashcardItems = useMemo(() => kenpoData.filter(i => i.belt === selectedBelt), [selectedBelt, kenpoData]);
+
+            const startSession = () => {
+                setSessionActive(true);
+                setCurrentIndex(0);
+                setResults({ up: 0, down: 0 });
+            };
+
+            const handleVote = (needsWork) => {
+                const currentItem = flashcardItems[currentIndex];
+                if (needsWork) {
+                    // Update state via prop (which triggers localStorage save) without crashing the sequence
+                    updateItem(currentItem.id, 'needsTraining', true);
+                    setResults(prev => ({ ...prev, down: prev.down + 1 }));
+                } else {
+                    setResults(prev => ({ ...prev, up: prev.up + 1 }));
+                }
+                setCurrentIndex(prev => prev + 1);
+            };
+
+            if (!sessionActive) {
+                return (
+                    <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
+                        <h2 className="text-xl font-bold text-white mb-4">Flashcard Study</h2>
+                        
+                        <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 pb-1 w-full justify-center">
+                            {belts.map(belt => (
+                                <button
+                                    key={belt}
+                                    onClick={() => setSelectedBelt(belt)}
+                                    className={`whitespace-nowrap px-3 py-1.5 rounded-full font-semibold transition-colors text-xs ${
+                                        selectedBelt === belt 
+                                        ? 'bg-kenpo-red text-white' 
+                                        : 'bg-gray-800 text-gray-400 border border-gray-700'
+                                    }`}
+                                >
+                                    {belt}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-sm text-center shadow-lg mb-6">
+                            <p className="text-gray-300 text-sm mb-2">
+                                Selected Belt: <span className="text-white font-bold">{selectedBelt}</span>
+                            </p>
+                            <p className="text-gray-500 text-xs mb-6">{flashcardItems.length} items in this curriculum group</p>
+                            <button
+                                onClick={startSession}
+                                className="w-full bg-kenpo-red hover:bg-kenpo-redHover text-white font-bold py-3.5 rounded-xl shadow-md transition-colors text-sm"
+                            >
+                                Start Flashcards
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (currentIndex >= flashcardItems.length) {
+                return (
+                    <div className="pb-28 px-4 pt-10 flex flex-col items-center justify-center min-h-[75vh] text-center">
+                        <h2 className="text-2xl font-bold text-white mb-2">Session Complete!</h2>
+                        <p className="text-gray-400 text-xs mb-8">{selectedBelt} Belt Review Summary</p>
+                        
+                        <div className="flex gap-4 w-full max-w-sm mb-8">
+                            <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
+                                <Icons.ThumbsUp />
+                                <span className="text-3xl font-black text-emerald-400 mt-2">{results.up}</span>
+                                <span className="text-xs text-gray-400 font-semibold mt-1">Got It</span>
+                            </div>
+                            <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
+                                <Icons.ThumbsDown />
+                                <span className="text-3xl font-black text-kenpo-red mt-2">{results.down}</span>
+                                <span className="text-xs text-gray-400 font-semibold mt-1">Needs Work</span>
+                            </div>
+                        </div>
+                        
+                        <p className="text-xs text-gray-400 mb-8 px-4">
+                            Items marked with <span className="text-kenpo-red font-bold">Needs Work</span> have been added to your Training Plan.
+                        </p>
+                        
+                        <button
+                            onClick={() => setSessionActive(false)}
+                            className="w-full max-w-sm bg-gray-700 hover:bg-gray-600 text-white font-bold py-3.5 rounded-xl border border-gray-600 transition-colors text-sm"
+                        >
+                            Back to Flashcard Menu
+                        </button>
+                    </div>
+                );
+            }
+
+            const currentCard = flashcardItems[currentIndex];
+
+            return (
+                <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
+                    <div className="w-full max-w-sm flex justify-between items-center mb-4 px-1">
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{selectedBelt} Belt</span>
+                        <span className="text-xs text-gray-400 font-mono bg-gray-800 px-2.5 py-1 rounded-md">
+                            {currentIndex + 1} / {flashcardItems.length}
+                        </span>
+                    </div>
+
+                    <div className="w-full max-w-sm aspect-[4/3] bg-gray-800 rounded-2xl shadow-xl border border-gray-700 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden mb-6">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-kenpo-red rounded-full opacity-10 blur-2xl"></div>
+                        
+                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${
+                            currentCard.type === 'Form' ? 'text-kenpo-gold' : 
+                            currentCard.type === 'Set' ? 'text-blue-400' : 'text-kenpo-red'
+                        }`}>
+                            {currentCard.type}
+                        </span>
+                        
+                        <h2 className="text-2xl font-black text-white leading-snug">
+                            {currentCard.name}
+                        </h2>
+                    </div>
+
+                    <div className="flex gap-3 w-full max-w-sm">
+                        <button
+                            onClick={() => handleVote(true)}
+                            className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-4 rounded-xl font-bold transition-colors border border-gray-700 hover:border-kenpo-red flex flex-col items-center justify-center gap-1"
+                        >
+                            <span className="text-kenpo-red text-lg">👎</span>
+                            <span className="text-xs text-gray-300">Needs Work</span>
+                        </button>
+                        <button
+                            onClick={() => handleVote(false)}
+                            className="flex-1 bg-kenpo-red hover:bg-kenpo-redHover text-white py-4 rounded-xl font-bold transition-colors flex flex-col items-center justify-center gap-1 shadow-md shadow-red-900/20"
+                        >
+                            <span className="text-white text-lg">👍</span>
+                            <span className="text-xs text-white">Got It</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('Curriculum');
+            const [selectedBelt, setSelectedBelt] = useState('Yellow');
+            
+            // Lazy load state from localStorage to avoid flashing
+            const [userData, setUserData] = useState(() => {
+                const saved = localStorage.getItem('@kenpo_data');
+                return saved ? JSON.parse(saved) : {};
+            });
+
+            // Universal update function passed to all components
+            const updateItem = (id, field, value) => {
+                setUserData(prev => {
+                    const updated = {
+                        ...prev,
+                        [id]: {
+                            ...(prev[id] || { notes: '', needsTraining: false }),
+                            [field]: value
+                        }
+                    };
+                    localStorage.setItem('@kenpo_data', JSON.stringify(updated));
+                    return updated;
+                });
+            };
+
+            return (
+                <div className="max-w-md mx-auto bg-[#111827] min-h-screen relative shadow-2xl flex flex-col">
+                    <div className="bg-gray-900/95 sticky top-0 z-20 py-4 px-4 border-b border-gray-800 backdrop-blur-md flex items-center justify-center">
+                        <h1 className="text-base font-black tracking-widest uppercase text-white">
+                            AMERICAN <span className="text-kenpo-red">KENPO</span>
+                        </h1>
+                    </div>
+
+                    <main className="flex-1">
+                        {activeTab === 'Curriculum' && (
+                            <CurriculumTab 
+                                belts={belts} 
+                                selectedBelt={selectedBelt} 
+                                setSelectedBelt={setSelectedBelt} 
+                                kenpoData={kenpoData} 
+                                userData={userData} 
+                                updateItem={updateItem} 
+                            />
+                        )}
+                        {activeTab === 'Browse' && (
+                            <BrowseTab 
+                                kenpoData={kenpoData} 
+                                userData={userData} 
+                                updateItem={updateItem} 
+                            />
+                        )}
+                        {activeTab === 'TrainingPlan' && (
+                            <TrainingPlanTab 
+                                kenpoData={kenpoData} 
+                                userData={userData} 
+                                updateItem={updateItem} 
+                            />
+                        )}
+                        {activeTab === 'Flashcards' && (
+                            <FlashcardTab 
+                                belts={belts} 
+                                selectedBelt={selectedBelt} 
+                                setSelectedBelt={setSelectedBelt} 
+                                kenpoData={kenpoData} 
+                                userData={userData} 
+                                updateItem={updateItem} 
+                            />
+                        )}
+                    </main>
+
+                    <nav className="fixed bottom-0 max-w-md w-full bg-gray-900/95 backdrop-blur-lg border-t border-gray-800 flex justify-around items-center py-3 px-2 z-50">
+                        <button 
+                            onClick={() => setActiveTab('Curriculum')}
+                            className={`flex flex-col items-center py-1.5 px-4 rounded-xl transition-colors ${activeTab === 'Curriculum' ? 'text-kenpo-red' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Icons.Book />
+                            <span className="text-[10px] font-bold mt-1">Curriculum</span>
+                        </button>
+                        
+                        <button 
+                            onClick={() => setActiveTab('Browse')}
+                            className={`flex flex-col items-center py-1.5 px-4 rounded-xl transition-colors ${activeTab === 'Browse' ? 'text-kenpo-red' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Icons.Search />
+                            <span className="text-[10px] font-bold mt-1">Browse</span>
+                        </button>
+
+                        <button 
+                            onClick={() => setActiveTab('TrainingPlan')}
+                            className={`flex flex-col items-center py-1.5 px-4 rounded-xl transition-colors ${activeTab === 'TrainingPlan' ? 'text-kenpo-red' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Icons.List />
+                            <span className="text-[10px] font-bold mt-1">Training</span>
+                        </button>
+
+                        <button 
+                            onClick={() => setActiveTab('Flashcards')}
+                            className={`flex flex-col items-center py-1.5 px-4 rounded-xl transition-colors ${activeTab === 'Flashcards' ? 'text-kenpo-red' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Icons.Flashcard />
+                            <span className="text-[10px] font-bold mt-1">Flashcards</span>
+                        </button>
+                    </nav>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

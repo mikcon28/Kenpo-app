@@ -360,10 +360,14 @@
             const [filter, setFilter] = useState('Empty Hands');
             const filters = ['Empty Hands', 'Stick', 'Knife', 'Gun', '2 Person', 'Sets and Forms'];
 
-            const items = useMemo(() => {
+const items = useMemo(() => {
                 return kenpoData.filter(item => {
                     // Include Sets and Forms ONLY when the new filter is selected
                     if (filter === 'Sets and Forms') {
+                        // Exclude the split sections of Long Form 4 from the Browse view
+                        if (item.name === 'Start Long Form 4' || item.name === 'Continue Long Form 4') {
+                            return false;
+                        }
                         return item.type === 'Set' || item.type === 'Form';
                     }
 

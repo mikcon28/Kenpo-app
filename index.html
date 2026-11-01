@@ -447,194 +447,152 @@ const items = useMemo(() => {
             );
         };
 
-// TAB 4: Flashcards
-const FlashcardTab = ({ belts, selectedBelt, setSelectedBelt, kenpoData, userData, updateItem }) => {
-    const [sessionActive, setSessionActive] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [results, setResults] = useState({ up: 0, down: 0 });
-    const [studyMode, setStudyMode] = useState('belt'); // 'belt' or 'all'
-    const [randomDeck, setRandomDeck] = useState([]);
+        // TAB 4: Flashcards
+        const FlashcardTab = ({ belts, selectedBelt, setSelectedBelt, kenpoData, userData, updateItem }) => {
+            const [sessionActive, setSessionActive] = useState(false);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [results, setResults] = useState({ up: 0, down: 0 });
 
-    useEffect(() => {
-        setSessionActive(false);
-        setCurrentIndex(0);
-        setResults({ up: 0, down: 0 });
-    }, [selectedBelt]);
+            useEffect(() => {
+                setSessionActive(false);
+                setCurrentIndex(0);
+                setResults({ up: 0, down: 0 });
+            }, [selectedBelt]);
 
-    // Dynamically switch between the selected belt deck or the randomized all-technique deck
-    const flashcardItems = useMemo(() => {
-        if (studyMode === 'all') return randomDeck;
-        return kenpoData.filter(i => i.belt === selectedBelt);
-    }, [selectedBelt, kenpoData, studyMode, randomDeck]);
+            const flashcardItems = useMemo(() => kenpoData.filter(i => i.belt === selectedBelt), [selectedBelt, kenpoData]);
 
-    const startBeltSession = () => {
-        setStudyMode('belt');
-        setSessionActive(true);
-        setCurrentIndex(0);
-        setResults({ up: 0, down: 0 });
-    };
+            const startSession = () => {
+                setSessionActive(true);
+                setCurrentIndex(0);
+                setResults({ up: 0, down: 0 });
+            };
 
-    const startAllTechniques = () => {
-        const allTechs = kenpoData.filter(i => i.type === 'Technique');
-        
-        // Fisher-Yates shuffle for true randomization
-        for (let i = allTechs.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [allTechs[i], allTechs[j]] = [allTechs[j], allTechs[i]];
-        }
-        
-        setRandomDeck(allTechs);
-        setStudyMode('all');
-        setSessionActive(true);
-        setCurrentIndex(0);
-        setResults({ up: 0, down: 0 });
-    };
+            const handleVote = (needsWork) => {
+                const currentItem = flashcardItems[currentIndex];
+                if (needsWork) {
+                    updateItem(currentItem.id, 'needsTraining', true);
+                    setResults(prev => ({ ...prev, down: prev.down + 1 }));
+                } else {
+                    setResults(prev => ({ ...prev, up: prev.up + 1 }));
+                }
+                setCurrentIndex(prev => prev + 1);
+            };
 
-    const handleVote = (needsWork) => {
-        const currentItem = flashcardItems[currentIndex];
-        if (needsWork) {
-            updateItem(currentItem.id, 'needsTraining', true);
-            setResults(prev => ({ ...prev, down: prev.down + 1 }));
-        } else {
-            setResults(prev => ({ ...prev, up: prev.up + 1 }));
-        }
-        setCurrentIndex(prev => prev + 1);
-    };
+            if (!sessionActive) {
+                return (
+                    <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
+                        <h2 className="text-xl font-bold text-white mb-4">Flashcard Study</h2>
+                        
+                        <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 pb-1 w-full justify-center">
+                            {belts.map(belt => (
+                                <button
+                                    key={belt}
+                                    onClick={() => setSelectedBelt(belt)}
+                                    className={`whitespace-nowrap px-3 py-1.5 rounded-full font-semibold transition-colors text-xs ${
+                                        selectedBelt === belt 
+                                        ? 'bg-kenpo-red text-white' 
+                                        : 'bg-gray-800 text-gray-400 border border-gray-700'
+                                    }`}
+                                >
+                                    {belt}
+                                </button>
+                            ))}
+                        </div>
 
-    if (!sessionActive) {
-        return (
-            <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
-                <h2 className="text-xl font-bold text-white mb-4">Flashcard Study</h2>
-                
-                <div className="flex overflow-x-auto no-scrollbar gap-2 mb-6 pb-1 w-full justify-center">
-                    {belts.map(belt => (
+                        <div className="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-sm text-center shadow-lg mb-6">
+                            <p className="text-gray-300 text-sm mb-2">
+                                Selected Belt: <span className="text-white font-bold">{selectedBelt}</span>
+                            </p>
+                            <p className="text-gray-500 text-xs mb-6">{flashcardItems.length} items in this curriculum group</p>
+                            <button
+                                onClick={startSession}
+                                className="w-full bg-kenpo-red hover:bg-kenpo-redHover text-white font-bold py-3.5 rounded-xl shadow-md transition-colors text-sm"
+                            >
+                                Start Flashcards
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (currentIndex >= flashcardItems.length) {
+                return (
+                    <div className="pb-28 px-4 pt-10 flex flex-col items-center justify-center min-h-[75vh] text-center">
+                        <h2 className="text-2xl font-bold text-white mb-2">Session Complete!</h2>
+                        <p className="text-gray-400 text-xs mb-8">{selectedBelt} Belt Review Summary</p>
+                        
+                        <div className="flex gap-4 w-full max-w-sm mb-8">
+                            <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
+                                <Icons.ThumbsUp />
+                                <span className="text-3xl font-black text-emerald-400 mt-2">{results.up}</span>
+                                <span className="text-xs text-gray-400 font-semibold mt-1">Got It</span>
+                            </div>
+                            <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
+                                <Icons.ThumbsDown />
+                                <span className="text-3xl font-black text-kenpo-red mt-2">{results.down}</span>
+                                <span className="text-xs text-gray-400 font-semibold mt-1">Needs Work</span>
+                            </div>
+                        </div>
+                        
+                        <p className="text-xs text-gray-400 mb-8 px-4">
+                            Items marked with <span className="text-kenpo-red font-bold">Needs Work</span> have been added to your Training Plan.
+                        </p>
+                        
                         <button
-                            key={belt}
-                            onClick={() => setSelectedBelt(belt)}
-                            className={`whitespace-nowrap px-3 py-1.5 rounded-full font-semibold transition-colors text-xs ${
-                                selectedBelt === belt 
-                                ? 'bg-kenpo-red text-white' 
-                                : 'bg-gray-800 text-gray-400 border border-gray-700'
-                            }`}
+                            onClick={() => setSessionActive(false)}
+                            className="w-full max-w-sm bg-gray-700 hover:bg-gray-600 text-white font-bold py-3.5 rounded-xl border border-gray-600 transition-colors text-sm"
                         >
-                            {belt}
+                            Back to Flashcard Menu
                         </button>
-                    ))}
-                </div>
+                    </div>
+                );
+            }
 
-                <div className="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-sm text-center shadow-lg mb-6">
-                    <p className="text-gray-300 text-sm mb-2">
-                        Selected Belt: <span className="text-white font-bold">{selectedBelt}</span>
-                    </p>
-                    <p className="text-gray-500 text-xs mb-6">
-                        {kenpoData.filter(i => i.belt === selectedBelt).length} items in this curriculum group
-                    </p>
-                    <button
-                        onClick={startBeltSession}
-                        className="w-full bg-kenpo-red hover:bg-kenpo-redHover text-white font-bold py-3.5 rounded-xl shadow-md transition-colors text-sm"
-                    >
-                        Start Belt Flashcards
-                    </button>
+            const currentCard = flashcardItems[currentIndex];
 
-                    <div className="relative flex py-4 items-center">
-                        <div className="flex-grow border-t border-gray-700"></div>
-                        <span className="flex-shrink-0 mx-4 text-gray-500 text-xs font-bold uppercase tracking-wider">OR</span>
-                        <div className="flex-grow border-t border-gray-700"></div>
+            return (
+                <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
+                    <div className="w-full max-w-sm flex justify-between items-center mb-4 px-1">
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{selectedBelt} Belt</span>
+                        <span className="text-xs text-gray-400 font-mono bg-gray-800 px-2.5 py-1 rounded-md">
+                            {currentIndex + 1} / {flashcardItems.length}
+                        </span>
                     </div>
 
-                    <button
-                        onClick={startAllTechniques}
-                        className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3.5 rounded-xl shadow-md border border-gray-600 transition-colors text-sm"
-                    >
-                        Randomise All Techniques
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    if (currentIndex >= flashcardItems.length) {
-        return (
-            <div className="pb-28 px-4 pt-10 flex flex-col items-center justify-center min-h-[75vh] text-center">
-                <h2 className="text-2xl font-bold text-white mb-2">Session Complete!</h2>
-                <p className="text-gray-400 text-xs mb-8">
-                    {studyMode === 'all' ? 'All Techniques' : `${selectedBelt} Belt`} Review Summary
-                </p>
-                
-                <div className="flex gap-4 w-full max-w-sm mb-8">
-                    <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
-                        <Icons.ThumbsUp />
-                        <span className="text-3xl font-black text-emerald-400 mt-2">{results.up}</span>
-                        <span className="text-xs text-gray-400 font-semibold mt-1">Got It</span>
+                    <div className="w-full max-w-sm aspect-[4/3] bg-gray-800 rounded-2xl shadow-xl border border-gray-700 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden mb-6">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-kenpo-red rounded-full opacity-10 blur-2xl"></div>
+                        
+                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${
+                            currentCard.type === 'Form' ? 'text-kenpo-gold' : 
+                            currentCard.type === 'Set' ? 'text-blue-400' : 'text-kenpo-red'
+                        }`}>
+                            {currentCard.type}
+                        </span>
+                        
+                        <h2 className="text-2xl font-black text-white leading-snug">
+                            {currentCard.name}
+                        </h2>
                     </div>
-                    <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
-                        <Icons.ThumbsDown />
-                        <span className="text-3xl font-black text-kenpo-red mt-2">{results.down}</span>
-                        <span className="text-xs text-gray-400 font-semibold mt-1">Needs Work</span>
+
+                    <div className="flex gap-3 w-full max-w-sm">
+                        <button
+                            onClick={() => handleVote(true)}
+                            className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-4 rounded-xl font-bold transition-colors border border-gray-700 hover:border-kenpo-red flex flex-col items-center justify-center gap-1"
+                        >
+                            <span className="text-kenpo-red text-lg">👎</span>
+                            <span className="text-xs text-gray-300">Needs Work</span>
+                        </button>
+                        <button
+                            onClick={() => handleVote(false)}
+                            className="flex-1 bg-kenpo-red hover:bg-kenpo-redHover text-white py-4 rounded-xl font-bold transition-colors flex flex-col items-center justify-center gap-1 shadow-md shadow-red-900/20"
+                        >
+                            <span className="text-white text-lg">👍</span>
+                            <span className="text-xs text-white">Got It</span>
+                        </button>
                     </div>
                 </div>
-                
-                <p className="text-xs text-gray-400 mb-8 px-4">
-                    Items marked with <span className="text-kenpo-red font-bold">Needs Work</span> have been added to your Training Plan.
-                </p>
-                
-                <button
-                    onClick={() => setSessionActive(false)}
-                    className="w-full max-w-sm bg-gray-700 hover:bg-gray-600 text-white font-bold py-3.5 rounded-xl border border-gray-600 transition-colors text-sm"
-                >
-                    Back to Flashcard Menu
-                </button>
-            </div>
-        );
-    }
-
-    const currentCard = flashcardItems[currentIndex];
-
-    return (
-        <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
-            <div className="w-full max-w-sm flex justify-between items-center mb-4 px-1">
-                <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-                    {studyMode === 'all' ? 'All Techniques' : `${selectedBelt} Belt`}
-                </span>
-                <span className="text-xs text-gray-400 font-mono bg-gray-800 px-2.5 py-1 rounded-md">
-                    {currentIndex + 1} / {flashcardItems.length}
-                </span>
-            </div>
-
-            <div className="w-full max-w-sm aspect-[4/3] bg-gray-800 rounded-2xl shadow-xl border border-gray-700 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden mb-6">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-kenpo-red rounded-full opacity-10 blur-2xl"></div>
-                
-                <span className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${
-                    currentCard.type === 'Form' ? 'text-kenpo-gold' : 
-                    currentCard.type === 'Set' ? 'text-blue-400' : 'text-kenpo-red'
-                }`}>
-                    {currentCard.type} {studyMode === 'all' && <span className="text-gray-500 ml-1">• {currentCard.belt}</span>}
-                </span>
-                
-                <h2 className="text-2xl font-black text-white leading-snug">
-                    {currentCard.name}
-                </h2>
-            </div>
-
-            <div className="flex gap-3 w-full max-w-sm">
-                <button
-                    onClick={() => handleVote(true)}
-                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-4 rounded-xl font-bold transition-colors border border-gray-700 hover:border-kenpo-red flex flex-col items-center justify-center gap-1"
-                >
-                    <span className="text-kenpo-red text-lg">👎</span>
-                    <span className="text-xs text-gray-300">Needs Work</span>
-                </button>
-                <button
-                    onClick={() => handleVote(false)}
-                    className="flex-1 bg-kenpo-red hover:bg-kenpo-redHover text-white py-4 rounded-xl font-bold transition-colors flex flex-col items-center justify-center gap-1 shadow-md shadow-red-900/20"
-                >
-                    <span className="text-white text-lg">👍</span>
-                    <span className="text-xs text-white">Got It</span>
-                </button>
-            </div>
-        </div>
-    );
-};
+            );
+        };
 
         // --- MAIN APP ---
 

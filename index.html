@@ -452,6 +452,8 @@ const items = useMemo(() => {
             const [sessionActive, setSessionActive] = useState(false);
             const [currentIndex, setCurrentIndex] = useState(0);
             const [results, setResults] = useState({ up: 0, down: 0 });
+            const [studyMode, setStudyMode] = useState('belt'); // 'belt' or 'all'
+            const [randomDeck, setRandomDeck] = useState([]);
 
             useEffect(() => {
                 setSessionActive(false);
@@ -459,9 +461,33 @@ const items = useMemo(() => {
                 setResults({ up: 0, down: 0 });
             }, [selectedBelt]);
 
-            const flashcardItems = useMemo(() => kenpoData.filter(i => i.belt === selectedBelt), [selectedBelt, kenpoData]);
+            // Dynamically switch between the selected belt deck or the randomized all-technique deck
+            const flashcardItems = useMemo(() => {
+                if (studyMode === 'all') return randomDeck;
+                return kenpoData.filter(i => i.belt === selectedBelt);
+            }, [selectedBelt, kenpoData, studyMode, randomDeck]);
 
-            const startSession = () => {
+            const startBeltSession = () => {
+                setStudyMode('belt');
+                setSessionActive(true);
+                setCurrentIndex(0);
+                setResults({ up: 0, down: 0 });
+            };
+
+            const startAllTechniques = () => {
+                // Filter only techniques
+                const allTechs = kenpoData.filter(i => i.type === 'Technique');
+                
+                // Bulletproof Fisher-Yates shuffle using a temp variable (Babel-safe)
+                for (let i = allTechs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    const temp = allTechs[i];
+                    allTechs[i] = allTechs[j];
+                    allTechs[j] = temp;
+                }
+                
+                setRandomDeck(allTechs);
+                setStudyMode('all');
                 setSessionActive(true);
                 setCurrentIndex(0);
                 setResults({ up: 0, down: 0 });
@@ -503,12 +529,27 @@ const items = useMemo(() => {
                             <p className="text-gray-300 text-sm mb-2">
                                 Selected Belt: <span className="text-white font-bold">{selectedBelt}</span>
                             </p>
-                            <p className="text-gray-500 text-xs mb-6">{flashcardItems.length} items in this curriculum group</p>
+                            <p className="text-gray-500 text-xs mb-6">
+                                {kenpoData.filter(i => i.belt === selectedBelt).length} items in this curriculum group
+                            </p>
                             <button
-                                onClick={startSession}
+                                onClick={startBeltSession}
                                 className="w-full bg-kenpo-red hover:bg-kenpo-redHover text-white font-bold py-3.5 rounded-xl shadow-md transition-colors text-sm"
                             >
-                                Start Flashcards
+                                Start Belt Flashcards
+                            </button>
+
+                            <div className="relative flex py-4 items-center">
+                                <div className="flex-grow border-t border-gray-700"></div>
+                                <span className="flex-shrink-0 mx-4 text-gray-500 text-xs font-bold uppercase tracking-wider">OR</span>
+                                <div className="flex-grow border-t border-gray-700"></div>
+                            </div>
+
+                            <button
+                                onClick={startAllTechniques}
+                                className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3.5 rounded-xl shadow-md border border-gray-600 transition-colors text-sm"
+                            >
+                                Randomise All Techniques
                             </button>
                         </div>
                     </div>
@@ -519,7 +560,9 @@ const items = useMemo(() => {
                 return (
                     <div className="pb-28 px-4 pt-10 flex flex-col items-center justify-center min-h-[75vh] text-center">
                         <h2 className="text-2xl font-bold text-white mb-2">Session Complete!</h2>
-                        <p className="text-gray-400 text-xs mb-8">{selectedBelt} Belt Review Summary</p>
+                        <p className="text-gray-400 text-xs mb-8">
+                            {studyMode === 'all' ? 'All Techniques' : `${selectedBelt} Belt`} Review Summary
+                        </p>
                         
                         <div className="flex gap-4 w-full max-w-sm mb-8">
                             <div className="flex-1 bg-gray-800 border border-gray-700 p-5 rounded-2xl flex flex-col items-center">
@@ -553,7 +596,9 @@ const items = useMemo(() => {
             return (
                 <div className="pb-28 px-4 pt-6 flex flex-col items-center justify-center min-h-[75vh]">
                     <div className="w-full max-w-sm flex justify-between items-center mb-4 px-1">
-                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{selectedBelt} Belt</span>
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                            {studyMode === 'all' ? 'All Techniques' : `${selectedBelt} Belt`}
+                        </span>
                         <span className="text-xs text-gray-400 font-mono bg-gray-800 px-2.5 py-1 rounded-md">
                             {currentIndex + 1} / {flashcardItems.length}
                         </span>
@@ -562,11 +607,11 @@ const items = useMemo(() => {
                     <div className="w-full max-w-sm aspect-[4/3] bg-gray-800 rounded-2xl shadow-xl border border-gray-700 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden mb-6">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-kenpo-red rounded-full opacity-10 blur-2xl"></div>
                         
-                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${
+                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center gap-1 ${
                             currentCard.type === 'Form' ? 'text-kenpo-gold' : 
                             currentCard.type === 'Set' ? 'text-blue-400' : 'text-kenpo-red'
                         }`}>
-                            {currentCard.type}
+                            {currentCard.type} {studyMode === 'all' && <span className="text-gray-500 ml-1 tracking-normal">• {currentCard.belt} Belt</span>}
                         </span>
                         
                         <h2 className="text-2xl font-black text-white leading-snug">
@@ -577,23 +622,22 @@ const items = useMemo(() => {
                     <div className="flex gap-3 w-full max-w-sm">
                         <button
                             onClick={() => handleVote(true)}
-                            className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-4 rounded-xl font-bold transition-colors border border-gray-700 hover:border-kenpo-red flex flex-col items-center justify-center gap-1"
+                            className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-4 rounded-xl font-bold transition-colors border border-gray-700 hover:border-kenpo-red flex flex-col items-center justify-center gap-2"
                         >
-                            <span className="text-kenpo-red text-lg">👎</span>
+                            <span className="text-kenpo-red"><Icons.ThumbsDown /></span>
                             <span className="text-xs text-gray-300">Needs Work</span>
                         </button>
                         <button
                             onClick={() => handleVote(false)}
-                            className="flex-1 bg-kenpo-red hover:bg-kenpo-redHover text-white py-4 rounded-xl font-bold transition-colors flex flex-col items-center justify-center gap-1 shadow-md shadow-red-900/20"
+                            className="flex-1 bg-kenpo-red hover:bg-kenpo-redHover text-white py-4 rounded-xl font-bold transition-colors flex flex-col items-center justify-center gap-2 shadow-md shadow-red-900/20"
                         >
-                            <span className="text-white text-lg">👍</span>
+                            <span className="text-white"><Icons.ThumbsUp /></span>
                             <span className="text-xs text-white">Got It</span>
                         </button>
                     </div>
                 </div>
             );
         };
-
         // --- MAIN APP ---
 
         const App = () => {
